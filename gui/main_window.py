@@ -3,7 +3,7 @@
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QPushButton, QFileDialog, QListWidget, QListWidgetItem,
                              QLabel, QLineEdit, QMenuBar, QFormLayout,
-                             QScrollArea, QMessageBox)
+                             QScrollArea, QMessageBox, QComboBox)
 from PyQt6.QtGui import QAction
 from PyQt6.QtCore import Qt
 from functools import partial # Para conectar sinais com argumentos extras
@@ -11,6 +11,8 @@ from functools import partial # Para conectar sinais com argumentos extras
 from core.efd_parser import parse_efd_file
 from core.efd_structures import RegistroEFD
 from core.efd_generator import generate_efd_file
+from core.efd_field_descriptions import efd_layout
+from core.efd_record_automations import regras_disponiveis
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -18,6 +20,10 @@ class MainWindow(QMainWindow):
         self.base_window_title = "Retificador EFD Contribuições"
         self.setWindowTitle(self.base_window_title)
         self.setGeometry(100, 100, 900, 700)
+        self.efd_layout = efd_layout
+        self.regras_disponiveis_para_registro = regras_disponiveis # Carrega as definições de regras
+        self.combo_regras_automacao = QComboBox()
+        self.btn_aplicar_regra = QPushButton("Aplicar Regra")
 
         self.registros_carregados: list[RegistroEFD] = []
         self.dados_modificados: bool = False # Flag para rastrear alterações
@@ -85,15 +91,44 @@ class MainWindow(QMainWindow):
         main_splitter_layout.addWidget(left_panel_widget, 1)
 
         # --- Painel Direito (Detalhes do Registro) ---
+        # self.scroll_area_detalhes = QScrollArea()
+        # self.scroll_area_detalhes.setWidgetResizable(True)
+        
+        # self.container_widget_detalhes = QWidget()
+        # self.detalhes_layout = QFormLayout(self.container_widget_detalhes)
+        # self.detalhes_layout.addRow(QLabel("Selecione um registro para ver os detalhes."))
+        
+        # self.scroll_area_detalhes.setWidget(self.container_widget_detalhes)
+        # main_splitter_layout.addWidget(self.scroll_area_detalhes, 2)  
+
+        right_panel_container_widget = QWidget()
+        right_panel_v_layout = QVBoxLayout(right_panel_container_widget)
+
+        # Layout para Automação de Regras
+        automacao_layout = QHBoxLayout()
+        automacao_layout.addWidget(QLabel("Automação:"))
+        self.combo_regras_automacao.setPlaceholderText("Selecione uma regra...")
+        self.combo_regras_automacao.setEnabled(False)
+        automacao_layout.addWidget(self.combo_regras_automacao, 1) # Stretch factor
+
+        self.btn_aplicar_regra.setEnabled(False)
+        self.btn_aplicar_regra.clicked.connect(self.aplicar_regra_selecionada)
+        automacao_layout.addWidget(self.btn_aplicar_regra)
+
+        right_panel_v_layout.addLayout(automacao_layout) # Adiciona o layout de automação
+
+        # ScrollArea para Detalhes do Registro (como antes)
         self.scroll_area_detalhes = QScrollArea()
         self.scroll_area_detalhes.setWidgetResizable(True)
-        
-        self.container_widget_detalhes = QWidget()
-        self.detalhes_layout = QFormLayout(self.container_widget_detalhes)
+
+        self.container_widget_detalhes = QWidget() 
+        self.detalhes_layout = QFormLayout(self.container_widget_detalhes) 
         self.detalhes_layout.addRow(QLabel("Selecione um registro para ver os detalhes."))
-        
+
         self.scroll_area_detalhes.setWidget(self.container_widget_detalhes)
-        main_splitter_layout.addWidget(self.scroll_area_detalhes, 2)
+        right_panel_v_layout.addWidget(self.scroll_area_detalhes) # Adiciona a área de scroll com os detalhes
+
+        main_splitter_layout.addWidget(right_panel_container_widget, 2) # Adiciona o container do painel direito ao splitter
 
 
     def abrir_arquivo_efd(self):
@@ -158,6 +193,11 @@ class MainWindow(QMainWindow):
     def limpar_detalhes_registro(self):
         while self.detalhes_layout.rowCount() > 0:
             self.detalhes_layout.removeRow(0)
+        # Limpar e desabilitar combo de regras também
+        self.combo_regras_automacao.clear()
+        self.combo_regras_automacao.setEnabled(False)
+        self.combo_regras_automacao.setPlaceholderText("Selecione uma regra...")
+        self.btn_aplicar_regra.setEnabled(False)
 
     def exibir_detalhes_registro(self):
         self.limpar_detalhes_registro()
@@ -170,7 +210,7 @@ class MainWindow(QMainWindow):
         list_item_selecionado = selected_items[0]
         indice_registro_original = list_item_selecionado.data(Qt.ItemDataRole.UserRole)
 
-        if indice_registro_original is None:
+        if indice_registro_original is None or not (0 <= indice_registro_original < len(self.registros_carregados)):
              self.detalhes_layout.addRow(QLabel("Erro ao obter dados do registro."))
              return
 
@@ -182,20 +222,62 @@ class MainWindow(QMainWindow):
             if i == 0: # Pula o campo de tipo de registro, já exibido
                 continue 
             
-            # Futuramente: label_texto = NOME_OFICIAL_DO_CAMPO (do Guia Prático)
-            label_texto = f"Campo {i}:" 
-            
+            # Buscar informações do campo no nosso dicionário de dados
+            info_campo = self.efd_layout.get(registro_selecionado.tipo_registro, {}).get(i)
+
+            label_texto_descritivo: str
+            tooltip_texto: str = ""
+
+            if info_campo and info_campo.get("nome"):
+                # Usar o nome oficial do campo e o índice para clareza
+                label_texto_descritivo = f"{info_campo['nome']} (Índice {i}):" 
+                tooltip_texto = info_campo.get('descr', '') # Pega a descrição para o tooltip
+            else:
+                label_texto_descritivo = f"Campo {i} (Nome Desconhecido):" # Fallback
+
+            campo_label_widget = QLabel(label_texto_descritivo)
+            if tooltip_texto:
+                campo_label_widget.setToolTip(tooltip_texto)
+
             campo_edit = QLineEdit(valor_campo)
-            # Conectar o sinal editingFinished para atualizar o modelo de dados
-            # Usamos functools.partial para passar argumentos extras para o slot
+            if tooltip_texto: # Adicionar tooltip ao QLineEdit também pode ser útil
+                campo_edit.setToolTip(f"{tooltip_texto}\nValor atual: {valor_campo}")
+
             campo_edit.editingFinished.connect(
                 partial(self.atualizar_campo_registro, 
                         indice_registro_original, 
-                        i, # Este é o índice do campo na lista `registro_selecionado.campos`
-                        campo_edit # Passamos o próprio QLineEdit para pegar o texto atualizado
-                       )
+                        i, 
+                        campo_edit
+                    )
             )
-            self.detalhes_layout.addRow(label_texto, campo_edit)
+            # Adiciona o QLabel e o QLineEdit ao layout de formulário
+            self.detalhes_layout.addRow(campo_label_widget, campo_edit)
+            # Popular ComboBox de Regras de Automação
+            self.combo_regras_automacao.clear()
+            self.combo_regras_automacao.setEnabled(False)
+            self.btn_aplicar_regra.setEnabled(False)
+
+            if registro_selecionado: # Verifica se há um registro selecionado
+                regras_para_tipo = self.regras_disponiveis_para_registro.get(registro_selecionado.tipo_registro, [])
+                if regras_para_tipo:
+                    self.combo_regras_automacao.setPlaceholderText("Selecione uma regra...")
+                    for i, regra_info in enumerate(regras_para_tipo):
+                        self.combo_regras_automacao.addItem(regra_info["nome_exibicao"], userData=regra_info) # Armazena todo o dict da regra
+                        
+                        # CORREÇÃO AQUI:
+                        # Em vez de: self.combo_regras_automacao.setItemToolTip(i, regra_info.get("descricao", ""))
+                        # Usamos setItemData com ToolTipRole:
+                        descricao_tooltip = regra_info.get("descricao", "")
+                        if descricao_tooltip:
+                            # 'i' aqui é o índice do item que acabamos de adicionar NO CONTEXTO DESTE LOOP DE POPULAÇÃO.
+                            # Se o combo já tivesse itens antes de clear(), 'i' não seria o índice global correto.
+                            # Mas como fazemos clear() antes, 'i' corresponde ao índice do item adicionado.
+                            self.combo_regras_automacao.setItemData(i, descricao_tooltip, Qt.ItemDataRole.ToolTipRole)
+                    
+                    self.combo_regras_automacao.setEnabled(True)
+                    self.btn_aplicar_regra.setEnabled(True)
+                else:
+                    self.combo_regras_automacao.setPlaceholderText("Nenhuma regra para este tipo.")
 
         if not registro_selecionado.campos or len(registro_selecionado.campos) <=1:
              self.detalhes_layout.addRow(QLabel("Registro não possui campos de dados adicionais."))
@@ -267,3 +349,46 @@ class MainWindow(QMainWindow):
                 event.ignore()  # Não fecha a janela
         else:
             event.accept() # Fecha normalmente
+    # Adicionar este novo método à classe MainWindow
+
+    def aplicar_regra_selecionada(self):
+        selected_items_registro = self.lista_registros_widget.selectedItems()
+        if not selected_items_registro:
+            QMessageBox.warning(self, "Atenção", "Nenhum registro selecionado para aplicar a regra.")
+            return
+
+        indice_combo_regra = self.combo_regras_automacao.currentIndex()
+        if indice_combo_regra < 0: # Nenhum item selecionado ou placeholder
+            QMessageBox.warning(self, "Atenção", "Nenhuma regra de automação selecionada.")
+            return
+
+        regra_data = self.combo_regras_automacao.currentData() # Recupera o dict da regra
+        if not regra_data or "funcao" not in regra_data:
+            QMessageBox.critical(self, "Erro", "Definição da regra inválida ou não encontrada.")
+            return
+
+        funcao_regra = regra_data["funcao"]
+
+        # Obter o objeto RegistroEFD que está selecionado na lista principal
+        list_item_selecionado_na_lista_principal = selected_items_registro[0]
+        indice_registro_original = list_item_selecionado_na_lista_principal.data(Qt.ItemDataRole.UserRole)
+        registro_efd_alvo = self.registros_carregados[indice_registro_original]
+
+        # Chamar a função da regra
+        # Passamos todos_os_registros caso a regra precise deles (opcional para a função da regra)
+        modificado = funcao_regra(registro_efd_alvo, self.registros_carregados) 
+
+        if modificado:
+            self._set_dados_modificados(True)
+            # Reexibir os detalhes do registro para refletir as mudanças
+            # Isso é crucial para que os QLineEdits sejam atualizados.
+            # Guardar a seleção atual da lista de registros para restaurá-la, se necessário,
+            # pois exibir_detalhes_registro pode ser chamado por itemSelectionChanged e limpar a seleção.
+            current_list_row = self.lista_registros_widget.currentRow()
+            self.exibir_detalhes_registro() # Atualiza os QLineEdits
+            if current_list_row != -1: # Restaura a seleção se foi perdida
+                self.lista_registros_widget.setCurrentRow(current_list_row)
+            QMessageBox.information(self, "Regra Aplicada", f"A regra '{regra_data['nome_exibicao']}' foi aplicada com sucesso.")
+        else:
+            # Se não modificou, pode ser por erro na regra (ver console) ou porque não havia o que mudar
+            QMessageBox.information(self, "Regra Aplicada", f"A regra '{regra_data['nome_exibicao']}' foi processada, mas não resultou em alterações no registro ou encontrou um problema (verifique o console).")
