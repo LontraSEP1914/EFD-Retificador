@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QLabel, QLineEdit, QMenuBar, QFormLayout,
                              QScrollArea, QMessageBox, QComboBox)
 from PyQt6.QtGui import QAction
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 from functools import partial # Para conectar sinais com argumentos extras
 
 from core.efd_parser import parse_efd_file
@@ -27,8 +27,40 @@ class MainWindow(QMainWindow):
 
         self.registros_carregados: list[RegistroEFD] = []
         self.dados_modificados: bool = False # Flag para rastrear alterações
+        self.mapa_campos_widgets: dict[int, QLineEdit] = {} 
 
         self._setup_ui()
+    
+    # Método para destacar
+    def _destacar_campo_temporariamente(self, qlineedit_widget: QLineEdit, duracao_ms: int = 1500, cor: str = "#ccffcc"): # Verde claro
+        if qlineedit_widget:
+            try:
+                folha_estilo_original = qlineedit_widget.styleSheet()
+                # Define um nome de objeto para o widget para que o timer possa encontrá-lo
+                # e verificar se é o mesmo widget, caso a interface seja recriada rapidamente.
+                # Usaremos o objectName para tentar tornar a restauração mais robusta.
+                # No entanto, a complexidade de garantir que o widget não foi recriado é alta.
+                # A abordagem mais simples é aceitar que se a UI for recriada, o destaque pode se perder
+                # ou ser aplicado a um novo widget no mesmo local.
+                # Para esta versão, a função de restauração capturará a folha_estilo_original.
+
+                qlineedit_widget.setStyleSheet(f"background-color: {cor};")
+                
+                def restaurar_estilo():
+                    # Tenta restaurar o estilo original.
+                    # É importante verificar se o widget ainda existe.
+                    try:
+                        if qlineedit_widget: # Verifica se a referência ao widget ainda é válida
+                             # Apenas restaura se o estilo atual ainda é o de destaque
+                             # (evita sobrescrever um novo estilo aplicado por outra ação)
+                            if qlineedit_widget.styleSheet() == f"background-color: {cor};":
+                                qlineedit_widget.setStyleSheet(folha_estilo_original)
+                    except RuntimeError: # Ocorre se o widget C++ subjacente foi excluído
+                        pass # Widget não existe mais, nada a fazer
+
+                QTimer.singleShot(duracao_ms, restaurar_estilo)
+            except RuntimeError: 
+                print(f"Aviso: Tentativa de destacar widget que pode não existir mais.")
 
     def _set_dados_modificados(self, modificado: bool):
         """Atualiza o estado de modificação e o título da janela."""
@@ -107,7 +139,7 @@ class MainWindow(QMainWindow):
         # Layout para Automação de Regras
         automacao_layout = QHBoxLayout()
         automacao_layout.addWidget(QLabel("Automação:"))
-        self.combo_regras_automacao.setPlaceholderText("Selecione uma regra...")
+        self.combo_regras_automacao.setPlaceholderText("Nenhuma regra para este tipo.")
         self.combo_regras_automacao.setEnabled(False)
         automacao_layout.addWidget(self.combo_regras_automacao, 1) # Stretch factor
 
@@ -201,10 +233,16 @@ class MainWindow(QMainWindow):
 
     def exibir_detalhes_registro(self):
         self.limpar_detalhes_registro()
+        self.mapa_campos_widgets.clear()
         
         selected_items = self.lista_registros_widget.selectedItems()
         if not selected_items:
             self.detalhes_layout.addRow(QLabel("Nenhum registro selecionado."))
+            # Limpar e desabilitar combo de regras se nenhum registro selecionado
+            self.combo_regras_automacao.clear()
+            self.combo_regras_automacao.setEnabled(False)
+            self.btn_aplicar_regra.setEnabled(False)
+            self.combo_regras_automacao.setPlaceholderText("Selecione um registro...")
             return
 
         list_item_selecionado = selected_items[0]
@@ -243,6 +281,8 @@ class MainWindow(QMainWindow):
             if tooltip_texto: # Adicionar tooltip ao QLineEdit também pode ser útil
                 campo_edit.setToolTip(f"{tooltip_texto}\nValor atual: {valor_campo}")
 
+            self.mapa_campos_widgets[i] = campo_edit
+
             campo_edit.editingFinished.connect(
                 partial(self.atualizar_campo_registro, 
                         indice_registro_original, 
@@ -263,10 +303,6 @@ class MainWindow(QMainWindow):
                     self.combo_regras_automacao.setPlaceholderText("Selecione uma regra...")
                     for i, regra_info in enumerate(regras_para_tipo):
                         self.combo_regras_automacao.addItem(regra_info["nome_exibicao"], userData=regra_info) # Armazena todo o dict da regra
-                        
-                        # CORREÇÃO AQUI:
-                        # Em vez de: self.combo_regras_automacao.setItemToolTip(i, regra_info.get("descricao", ""))
-                        # Usamos setItemData com ToolTipRole:
                         descricao_tooltip = regra_info.get("descricao", "")
                         if descricao_tooltip:
                             # 'i' aqui é o índice do item que acabamos de adicionar NO CONTEXTO DESTE LOOP DE POPULAÇÃO.
@@ -300,6 +336,17 @@ class MainWindow(QMainWindow):
             if sucesso_definir:
                 print(f"Registro [{indice_do_registro_na_lista}] Campo [{indice_do_campo_no_registro}] atualizado para: '{novo_valor}'")
                 self._set_dados_modificados(True)
+                if indice_do_campo_no_registro in self.mapa_campos_widgets:
+                    widget_do_campo = self.mapa_campos_widgets[indice_do_campo_no_registro]
+                    # Certificar-se de que o widget na tela é o mesmo que foi passado (qlineedit_referencia)
+                    # Isso é uma segurança extra, pois o mapa é recriado ao exibir detalhes.
+                    # Se o widget que disparou 'editingFinished' é o mesmo que está no mapa para esse índice, destaque-o.
+                    if widget_do_campo is qlineedit_referencia:
+                         self._destacar_campo_temporariamente(widget_do_campo)
+                    else:
+                        # Isso pode acontecer se a exibição de detalhes foi recarregada entre a edição e o fim da edição,
+                        # ou se o mapa de alguma forma ficou dessincronizado. Pouco provável com editingFinished.
+                        print(f"Aviso: Widget para campo {indice_do_campo_no_registro} no mapa é diferente do widget editado.")
             else:
                 # Isso não deveria acontecer se o índice do campo for > 0
                 print(f"Erro ao tentar definir campo [{indice_do_campo_no_registro}] do registro [{indice_do_registro_na_lista}]")
@@ -388,6 +435,9 @@ class MainWindow(QMainWindow):
             self.exibir_detalhes_registro() # Atualiza os QLineEdits
             if current_list_row != -1: # Restaura a seleção se foi perdida
                 self.lista_registros_widget.setCurrentRow(current_list_row)
+            for idx_campo_alterado in modificado:
+                if idx_campo_alterado in self.mapa_campos_widgets:
+                    self._destacar_campo_temporariamente(self.mapa_campos_widgets[idx_campo_alterado])
             QMessageBox.information(self, "Regra Aplicada", f"A regra '{regra_data['nome_exibicao']}' foi aplicada com sucesso.")
         else:
             # Se não modificou, pode ser por erro na regra (ver console) ou porque não havia o que mudar

@@ -11,135 +11,182 @@ from decimal import Decimal, InvalidOperation # Usar Decimal para precisão fina
 # Deve retornar True se a regra foi aplicada com sucesso e modificou o registro,
 # False caso contrário ou se houve erro.
 
-def calcular_contribuicao_m210(registro_m210, todos_os_registros=None) -> bool:
+def calcular_contribuicao_m210(registro_m210, todos_os_registros=None) -> list[int] | None: 
     """
     Calcula o VL_CONT_APUR (campo 5) do registro M210.
-    VL_CONT_APUR = VL_BC_CONT (campo 3) * (ALIQ_PIS (campo 4) / 100)
+    Retorna lista de índices de campos modificados, lista vazia se nada mudou, ou None em caso de erro.
     """
+    campos_modificados_indices = [] 
     try:
-        # Índices dos campos para M210:
-        # 3: VL_BC_CONT
-        # 4: ALIQ_PIS
-        # 5: VL_CONT_APUR
+        idx_vl_bc_cont = 3
+        idx_aliq_pis = 4
+        idx_vl_cont_apur = 5
         
-        vl_bc_cont_str = registro_m210.obter_campo(3)
-        aliq_pis_str = registro_m210.obter_campo(4)
+        vl_bc_cont_str = registro_m210.obter_campo(idx_vl_bc_cont)
+        aliq_pis_str = registro_m210.obter_campo(idx_aliq_pis)
 
         if vl_bc_cont_str is None or aliq_pis_str is None:
-            print("M210: Campos de BC ou Alíquota não encontrados para cálculo.")
-            return False
+            print(f"M210 (Calc Contrib): Campos {idx_vl_bc_cont} ou {idx_aliq_pis} não encontrados.")
+            return None # Erro: campo não encontrado
 
-        # Converter para Decimal, tratando vírgula como separador decimal
         vl_bc_cont = Decimal(vl_bc_cont_str.replace(',', '.'))
         aliq_pis = Decimal(aliq_pis_str.replace(',', '.'))
         
-        vl_cont_apur = (vl_bc_cont * (aliq_pis / Decimal('100'))).quantize(Decimal('0.01'))
+        vl_cont_apur_calculado = (vl_bc_cont * (aliq_pis / Decimal('100'))).quantize(Decimal('0.01'))
+        vl_cont_apur_calculado_str = f"{vl_cont_apur_calculado:.2f}".replace('.', ',')
         
-        # Formatar de volta para string com vírgula decimal e duas casas
-        vl_cont_apur_str = f"{vl_cont_apur:.2f}".replace('.', ',')
+        valor_antigo_cont_apur = registro_m210.obter_campo(idx_vl_cont_apur)
         
-        # Atualizar o campo no registro
-        valor_antigo = registro_m210.obter_campo(5)
-        if valor_antigo != vl_cont_apur_str:
-            registro_m210.definir_campo(5, vl_cont_apur_str)
-            print(f"Regra 'calcular_contribuicao_m210' aplicada. VL_CONT_APUR: {vl_cont_apur_str}")
-            return True
+        if valor_antigo_cont_apur != vl_cont_apur_calculado_str:
+            registro_m210.definir_campo(idx_vl_cont_apur, vl_cont_apur_calculado_str)
+            campos_modificados_indices.append(idx_vl_cont_apur) # Adiciona o índice do campo modificado
+            print(f"Regra 'calcular_contribuicao_m210' aplicada. VL_CONT_APUR (campo {idx_vl_cont_apur}): {vl_cont_apur_calculado_str}")
         else:
-            print(f"Regra 'calcular_contribuicao_m210': VL_CONT_APUR já está correto ({vl_cont_apur_str}). Nenhuma alteração feita.")
-            return False # Não houve modificação efetiva
-
-    except InvalidOperation: # Erro na conversão para Decimal
-        print(f"M210: Erro de conversão de valor numérico para cálculo da contribuição. Verifique os campos VL_BC_CONT e ALIQ_PIS.")
-        return False
-    except Exception as e:
-        print(f"Erro ao aplicar regra 'calcular_contribuicao_m210' no M210: {e}")
-        return False
-
-def aplicar_logica_utilizacao_credito_m100(registro_m100, todos_os_registros=None) -> bool:
-    """
-    Aplica a lógica de utilização de crédito para o registro M100.
-    Baseado na entrada do VL_CRED_UTIL_PER (campo índice 15), calcula:
-    - IND_UTIL_CRED_PER (campo índice 14)
-    - VL_CRED_DIF (campo índice 16)
-    Utiliza VL_CRED (campo índice 7) como o crédito total disponível.
-    """
-    try:
-        idx_vl_cred_apurado = 11
-        idx_ind_util = 12
-        idx_vl_cred_util_per = 13 # Campo que o usuário edita, gatilho da regra
-        idx_vl_cred_dif = 14
-
-        vl_cred_apurado_str = registro_m100.obter_campo(idx_vl_cred_apurado)
-        vl_cred_util_per_str = registro_m100.obter_campo(idx_vl_cred_util_per)
-
-        if vl_cred_apurado_str is None or vl_cred_util_per_str is None:
-            print("M100: Campo VL_CRED ou VL_CRED_UTIL_PER não encontrado.")
-            return False
-
-        # Converter para Decimal para cálculos precisos
-        cred_apurado = Decimal(vl_cred_apurado_str.replace(',', '.'))
-        cred_utilizado = Decimal(vl_cred_util_per_str.replace(',', '.'))
-
-        novo_ind_util = ""
-        modificado_ind = False
-        modificado_dif = False
-
-        # Lógica para IND_UTIL_CRED_PER (campo idx_ind_util)
-        # "caso seja usado o valor total do campo 12 (VL_CRED), o campo 13 (IND_UTIL) fica com zero, 
-        # caso contrário, ele vira 1"
-        if cred_utilizado < Decimal('0'):
-            print("M100: Valor do Crédito Utilizado não pode ser negativo.")
-            # Poderíamos aqui lançar um erro ou notificar o usuário na GUI de forma mais explícita.
-            # Por ora, não faremos alterações.
-            return False 
-        
-        if cred_utilizado > cred_apurado:
-            print(f"M100: Alerta! Crédito utilizado ({cred_utilizado}) maior que o disponível ({cred_apurado}). Ajustando utilizado para o máximo disponível.")
-            # Ajusta o crédito utilizado para não exceder o apurado.
-            # Ou poderíamos retornar False e exigir correção manual.
-            # Para este exemplo, vamos ajustar e continuar.
-            cred_utilizado = cred_apurado 
-            novo_vl_cred_util_per_str = f"{cred_utilizado:.2f}".replace('.', ',')
-            if registro_m100.obter_campo(idx_vl_cred_util_per) != novo_vl_cred_util_per_str:
-                 registro_m100.definir_campo(idx_vl_cred_util_per, novo_vl_cred_util_per_str)
-                 # Como este campo é o "gatilho", a reexibição dos detalhes na GUI o mostrará atualizado.
-
-        if cred_apurado > Decimal('0'): # Só faz sentido definir 0 ou 1 se havia crédito.
-            if cred_utilizado == cred_apurado:
-                novo_ind_util = "0" # Uso total
-            else: # Inclui cred_utilizado < cred_apurado (e cred_utilizado >= 0)
-                novo_ind_util = "1" # Uso parcial
-        else: # Se não há crédito apurado, o indicador pode não se aplicar ou ser "1"
-            novo_ind_util = "1" # Ou "" (vazio), dependendo da especificação para VL_CRED = 0
-
-        valor_antigo_ind = registro_m100.obter_campo(idx_ind_util)
-        if valor_antigo_ind != novo_ind_util:
-            registro_m100.definir_campo(idx_ind_util, novo_ind_util)
-            modificado_ind = True
-
-        # Lógica para VL_CRED_DIF (campo idx_vl_cred_dif)
-        # "o campo 15 (VL_CRED_DIF) é a subtração dos campos 12 (VL_CRED) e 14 (VL_CRED_UTIL_PER)"
-        cred_diferir = cred_apurado - cred_utilizado
-        novo_vl_cred_dif_str = f"{cred_diferir:.2f}".replace('.', ',')
-
-        valor_antigo_dif = registro_m100.obter_campo(idx_vl_cred_dif)
-        if valor_antigo_dif != novo_vl_cred_dif_str:
-            registro_m100.definir_campo(idx_vl_cred_dif, novo_vl_cred_dif_str)
-            modificado_dif = True
-        
-        if modificado_ind or modificado_dif:
-            print(f"Regra 'aplicar_logica_utilizacao_credito_m100' aplicada. IND_UTIL: {novo_ind_util}, VL_CRED_DIF: {novo_vl_cred_dif_str}")
-            return True
-        else:
-            print("Regra 'aplicar_logica_utilizacao_credito_m100': Nenhuma alteração efetiva nos campos calculados.")
-            return False
+            print(f"Regra 'calcular_contribuicao_m210': VL_CONT_APUR já está correto ({vl_cont_apur_calculado_str}). Nenhuma alteração.")
+            # Nenhuma modificação, campos_modificados_indices permanecerá vazia
+            
+        return campos_modificados_indices # Retorna a lista (pode estar vazia)
 
     except InvalidOperation:
-        print(f"M100: Erro de conversão de valor numérico. Verifique os campos de valores.")
-        return False
+        print(f"M210 (Calc Contrib): Erro de conversão de valor. Verifique campos {idx_vl_bc_cont} e {idx_aliq_pis}.")
+        return None # Erro de conversão
+    except Exception as e:
+        print(f"Erro ao aplicar regra 'calcular_contribuicao_m210': {e}")
+        return None # Outro err
+
+def aplicar_logica_utilizacao_credito_m100(registro_m100, todos_os_registros=None) -> list[int] | None:
+    """
+    Aplica a lógica de utilização de crédito para o registro M100.
+    Baseado na entrada do VL_CRED_DESC (índice 13), calcula:
+    - IND_DESC_CRED (índice 12)
+    - SLD_CRED (índice 14)
+    Utiliza VL_CRED_DISP (índice 11) como o crédito total disponível.
+    Retorna lista de índices de campos modificados, lista vazia se nada mudou, ou None em caso de erro.
+    """
+    campos_modificados_indices = []
+    try:
+        idx_vl_cred_disponivel = 11
+        idx_ind_desc_cred = 12
+        idx_vl_cred_desc = 13     
+        idx_sld_cred_a_diferir = 14
+
+        vl_cred_disponivel_str = registro_m100.obter_campo(idx_vl_cred_disponivel)
+        vl_cred_desc_str = registro_m100.obter_campo(idx_vl_cred_desc)
+
+        if vl_cred_disponivel_str is None or vl_cred_desc_str is None:
+            print(f"M100 (Lógica Uso): Campo {idx_vl_cred_disponivel} (VL_CRED_DISP) ou {idx_vl_cred_desc} (VL_CRED_DESC) não encontrado.")
+            return None
+
+        cred_disponivel = Decimal(vl_cred_disponivel_str.replace(',', '.'))
+        cred_utilizado = Decimal(vl_cred_desc_str.replace(',', '.'))
+        
+        novo_ind_desc_cred = ""
+        
+        # Lógica para ajuste e verificação do VL_CRED_DESC (idx_vl_cred_desc)
+        if cred_utilizado < Decimal('0'):
+            print("M100 (Lógica Uso): Valor do Crédito Utilizado (VL_CRED_DESC) não pode ser negativo. Regra não aplicada.")
+            return None
+        
+        if cred_utilizado > cred_disponivel:
+            print(f"M100 (Lógica Uso): Alerta! Crédito Utilizado ({cred_utilizado}) maior que o Disponível ({cred_disponivel}). Ajustando VL_CRED_DESC para o máximo disponível.")
+            cred_utilizado = cred_disponivel 
+            novo_vl_cred_desc_str = f"{cred_utilizado:.2f}".replace('.', ',')
+            if registro_m100.obter_campo(idx_vl_cred_desc) != novo_vl_cred_desc_str:
+                 registro_m100.definir_campo(idx_vl_cred_desc, novo_vl_cred_desc_str)
+                 campos_modificados_indices.append(idx_vl_cred_desc)
+
+        # Lógica para IND_DESC_CRED (idx_ind_desc_cred)
+        if cred_disponivel >= Decimal('0'):
+            if cred_utilizado == cred_disponivel:
+                novo_ind_desc_cred = "0" 
+            else: 
+                novo_ind_desc_cred = "1" 
+        else: 
+            novo_ind_desc_cred = "1" 
+
+        valor_antigo_ind = registro_m100.obter_campo(idx_ind_desc_cred)
+        if valor_antigo_ind != novo_ind_desc_cred:
+            registro_m100.definir_campo(idx_ind_desc_cred, novo_ind_desc_cred)
+            campos_modificados_indices.append(idx_ind_desc_cred)
+
+        # Lógica para SLD_CRED (idx_sld_cred_a_diferir)
+        sld_cred_a_diferir = cred_disponivel - cred_utilizado
+        novo_sld_cred_str = f"{sld_cred_a_diferir:.2f}".replace('.', ',')
+
+        valor_antigo_sld = registro_m100.obter_campo(idx_sld_cred_a_diferir)
+        if valor_antigo_sld != novo_sld_cred_str:
+            registro_m100.definir_campo(idx_sld_cred_a_diferir, novo_sld_cred_str)
+            campos_modificados_indices.append(idx_sld_cred_a_diferir)
+        
+        if campos_modificados_indices:
+            print(f"Regra 'aplicar_logica_utilizacao_credito_m100' aplicada. Campos alterados: {campos_modificados_indices}")
+        else:
+            print("Regra 'aplicar_logica_utilizacao_credito_m100': Nenhuma alteração efetiva nos campos calculados.")
+            
+        return campos_modificados_indices
+
+    except InvalidOperation:
+        print(f"M100 (Lógica Uso): Erro de conversão de valor numérico. Verifique os campos VL_CRED_DISP e VL_CRED_DESC.")
+        return None
     except Exception as e:
         print(f"Erro ao aplicar regra 'aplicar_logica_utilizacao_credito_m100': {e}")
-        return False
+        return None
+
+def m100_usar_credito_total(registro_m100, todos_os_registros=None) -> list[int] | None:
+    """
+    Regra para M100: Configura o registro para utilizar o total do crédito disponível.
+    - VL_CRED_DESC (idx 13) = VL_CRED_DISP (idx 11)
+    - IND_DESC_CRED (idx 12) = "0"
+    - SLD_CRED (idx 14) = "0,00"
+    Retorna lista de índices de campos modificados, lista vazia se nada mudou, ou None em caso de erro.
+    """
+    campos_modificados_indices = []
+    try:
+        idx_vl_cred_disponivel = 11
+        idx_ind_desc_cred = 12
+        idx_vl_cred_desc = 13
+        idx_sld_cred_a_diferir = 14
+
+        vl_cred_disponivel_str = registro_m100.obter_campo(idx_vl_cred_disponivel)
+
+        if vl_cred_disponivel_str is None:
+            print("M100 (Usar Total): Campo VL_CRED_DISP não encontrado.")
+            return None
+
+        cred_disponivel = Decimal(vl_cred_disponivel_str.replace(',', '.'))
+
+        # Definir VL_CRED_DESC para ser igual ao VL_CRED_DISP
+        novo_vl_cred_desc_str = f"{cred_disponivel:.2f}".replace('.', ',')
+        # Definir IND_DESC_CRED para "0"
+        novo_ind_desc_cred = "0"
+        # Definir SLD_CRED para "0,00"
+        novo_sld_cred_a_diferir_str = "0,00"
+
+        if registro_m100.obter_campo(idx_vl_cred_desc) != novo_vl_cred_desc_str:
+            registro_m100.definir_campo(idx_vl_cred_desc, novo_vl_cred_desc_str)
+            campos_modificados_indices.append(idx_vl_cred_desc)
+        
+        if registro_m100.obter_campo(idx_ind_desc_cred) != novo_ind_desc_cred:
+            registro_m100.definir_campo(idx_ind_desc_cred, novo_ind_desc_cred)
+            campos_modificados_indices.append(idx_ind_desc_cred)
+
+        if registro_m100.obter_campo(idx_sld_cred_a_diferir) != novo_sld_cred_a_diferir_str:
+            registro_m100.definir_campo(idx_sld_cred_a_diferir, novo_sld_cred_a_diferir_str)
+            campos_modificados_indices.append(idx_sld_cred_a_diferir)
+
+        if campos_modificados_indices:
+            print(f"Regra M100 'Usar Crédito Total' aplicada. Campos alterados: {campos_modificados_indices}")
+        else:
+            print("Regra M100 'Usar Crédito Total': Nenhuma alteração necessária.")
+            
+        return campos_modificados_indices
+
+    except InvalidOperation:
+        print("M100 (Usar Total): Erro de conversão de valor numérico para VL_CRED_DISP.")
+        return None
+    except Exception as e:
+        print(f"Erro ao aplicar regra 'M100 Usar Crédito Total': {e}")
+        return None
 
 # --- Dicionário de Regras Disponíveis ---
 # Mapeia tipo_registro para uma lista de dicionários de regras.
@@ -175,5 +222,12 @@ regras_disponiveis["M100"].append(
         "nome_exibicao": "Aplicar Lógica de Uso de Crédito (M100)",
         "funcao": aplicar_logica_utilizacao_credito_m100,
         "descricao": "Calcula o Indicador de Uso e o Saldo a Diferir com base no Crédito Disponível e no Crédito Utilizado no período."
+    }
+)
+regras_disponiveis["M100"].append(
+    {
+        "nome_exibicao": "M100: Usar Crédito Total (Zerar Saldo)",
+        "funcao": m100_usar_credito_total,
+        "descricao": "Define VL_CRED_DESC igual a VL_CRED_DISP, IND_DESC_CRED para '0' e SLD_CRED para '0,00'."
     }
 )

@@ -8,6 +8,8 @@ Onde "IndiceDoCampo" é o índice na lista de campos (0-based) após o split da 
 O campo de índice 0 é sempre o próprio tipo do registro.
 """
 
+# 0: {"nome": "", "descr": ""}
+
 efd_layout = {
     "0000": {
         0: {"nome": "REG", "descr": "Identificador do Registro"},
