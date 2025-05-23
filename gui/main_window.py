@@ -1,10 +1,11 @@
 # gui/main_window.py
 
+import os
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QPushButton, QFileDialog, QListWidget, QListWidgetItem,
                              QLabel, QLineEdit, QMenuBar, QFormLayout,
                              QScrollArea, QMessageBox, QComboBox)
-from PyQt6.QtGui import QAction
+from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtCore import Qt, QTimer
 from functools import partial # Para conectar sinais com argumentos extras
 
@@ -24,6 +25,14 @@ class MainWindow(QMainWindow):
         self.regras_disponiveis_para_registro = regras_disponiveis # Carrega as definições de regras
         self.combo_regras_automacao = QComboBox()
         self.btn_aplicar_regra = QPushButton("Aplicar Regra")
+
+        project_base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        icon_path = os.path.join(project_base_path, "resources", "SPED.png") # Substitua "app_icon.png" pelo nome do seu arquivo
+
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
+        else:
+            print(f"Aviso: Ícone não encontrado em '{icon_path}'")
 
         self.registros_carregados: list[RegistroEFD] = []
         self.dados_modificados: bool = False # Flag para rastrear alterações
