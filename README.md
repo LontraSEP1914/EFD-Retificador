@@ -1,6 +1,6 @@
 # EFD-Retificador
 
-![Ícone do SPED]((sped.png)) Uma ferramenta desktop desenvolvida em Python e PyQt6 para visualizar, editar e automatizar a retificação de arquivos da EFD Contribuições (SPED Fiscal). A aplicação permite que analistas fiscais manipulem os registros do arquivo TXT de forma intuitiva, apliquem regras de negócio pré-definidas e gerem o arquivo retificado com segurança.
+Uma ferramenta desktop desenvolvida em Python e PyQt6 para visualizar, editar e automatizar a retificação de arquivos da EFD Contribuições (SPED Fiscal). A aplicação permite que analistas fiscais manipulem os registros do arquivo TXT de forma intuitiva, apliquem regras de negócio pré-definidas e gerem o arquivo retificado com segurança.
 
 Este projeto foi criado para resolver a necessidade de automação na análise e correção de créditos fiscais, reduzindo o tempo de análise em até 75%, como destacado no [meu portfólio](https://lontrasep1914.github.io/).
 
