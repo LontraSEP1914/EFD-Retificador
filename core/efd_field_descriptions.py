@@ -1,4 +1,4 @@
-# core/efd_field_descriptions.py
+# efd_field_descriptions.py
 
 """
 Dicionário de dados para a EFD Contribuições.
@@ -11,6 +11,7 @@ O campo de índice 0 é sempre o próprio tipo do registro.
 # 0: {"nome": "", "descr": ""}
 
 efd_layout = {
+    # --- Bloco 0 ---
     "0000": {
         0: {"nome": "REG", "descr": "Identificador do Registro"},
         1: {"nome": "COD_VER", "descr": "Código da versão do leiaute"},
@@ -31,14 +32,56 @@ efd_layout = {
         0: {"nome": "REG", "descr": "Identificador do Registro"},
         1: {"nome": "IND_MOV", "descr": "Indicador de movimento (0-Bloco com dados; 1-Bloco sem dados)"},
     },
-    "0110": { # Regime de Apuração da Contribuição
-        0: {"nome": "REG", "descr": "Identificador do Registro"},
-        1: {"nome": "COD_INC_TRIB", "descr": "Indicador do regime de incidência (1-Não Cumulativo; 2-Cumulativo; 3-Ambos)"},
-        2: {"nome": "VL_REC_BRU_NC_TOT_PER", "descr": "Receita Bruta Não-Cumulativa Total no Período"},
-        3: {"nome": "VL_REC_BRU_CUM_TOT_PER", "descr": "Receita Bruta Cumulativa Total no Período"},
-        # ... (este registro tem mais campos)
+    "0100": {
+        0: {"nome": "REG", "descr": "Identificador do Registro."},
+        1: {"nome": "NOME", "descr": "Nome do Contabilista."},
+        2: {"nome": "CPF", "descr": "Número de Inscrição do Contabilista no CPF."},
+        3: {"nome": "CRC", "descr": "Número de Inscrição do Contabilista no Conselho Regional de Contabilidade."},
+        4: {"nome": "CNPJ", "descr": "Número de Inscrição do Escritório de Contabilidade no CNPJ."},
+        5: {"nome": "CEP", "descr": "Código de Endereçamento Postal."},
+        6: {"nome": "END", "descr": "Logradouro e Endereço do Imóvel."},
+        7: {"nome": "NUM", "descr": "Número do Imóvel."},
+        8: {"nome": "COMPL", "descr": "Dados Complementares do Endereço."},
+        9: {"nome": "BAIRRO", "descr": "Bairro em que o Imóvel está situado."},
+        10: {"nome": "FONE", "descr": "Número do Telefone."},
+        11: {"nome": "FAX", "descr": "Número do FAX."},
+        12: {"nome": "EMAIL", "descr": "Endereço do Correio Eletrônico (E-MAIL)."},
+        13: {"nome": "COD_MUN", "descr": "Código do Município, conforme tabela IBGE."},
     },
-    # --- Bloco M (Exemplos) ---
+    "0110": { # Regime de Apuração da Contribuição
+        0: {"nome": "REG", "descr": "Identificação do Registro."},
+        1: {"nome": "COD_INC_TRIB", "descr": "Indicador do regime de incidência (1-Não Cumulativo; 2-Cumulativo; 3-Ambos)"},
+        2: {"nome": "IND_APRO_CRED", "descr": "Código indicador de método de apropriação de c´reditos comuns, no caso de incidência no regime não-culumativo (COD_INC_TRIB = 1 OU 3): 1 - Método de Apropriação Direta; 2 - Método de Rateio Proporcional (Receita Bruta)."},
+        3: {"nome": "COD_TIPO_CONT", "descr": "Código indicador do Tipo de Contribuição Apurada no Período: 1 - Apuração da Contribuição Exclusivamente a Alíquota Básica; 2 - Apuração da Contribuição a Aliquotas Específicas (Diferenciadas e/ou por Unidade de Medida de Produto)."},
+        4: {"nome": "IND_REG_CUM", "descr": "Código indicador do critério de escrituração e apuração adotado, no caos de incidência exclusivamente no regime cumulativo (COD_INC_TRIB = 2), pela pessoa jurídica: 1 - Regime de Caixa - Escrituração consolidada (Registro F500); 2 - Regime de Competência - Escrituração consolidada (Registro F550); 9 - Regime de Competência - Escrituração detalhada, com base nos registros dos blocos A, C, D e F."},
+    },
+    "0140": {
+        0: {"nome": "REG", "descr": "Identificador do Registro."},
+        1: {"nome": "COD_EST", "descr": "Código de Identificação do Estabelecimento."},
+        2: {"nome": "NOME", "descr": "Nome Empresarial do Estabelecimento."},
+        3: {"nome": "CNPJ", "descr": "Número de Inscrição do Estabelecimento no CNPJ."},
+        4: {"nome": "UF", "descr": "Sigla da Unidade da Federação do Estabelecimento."},
+        5: {"nome": "IE", "descr": "Inscrição Estadual do Estabelecimento, se contribuinte de ICMS."},
+        6: {"nome": "COD_MUN", "descr": "Código do Município do Domicílio Fiscal do Estabelecimento, conforme a tabela IBGE."},
+        7: {"nome": "IM", "descr": "Inscrição Municipal do Estabelecmento, se contribuinte do ISS."},
+        8: {"nome": "SUFRAMA", "descr": "Inscrição do Estabelecimento na Suframa."},
+    },
+    "0150": {
+        0: {"nome": "REG", "descr": "Identificador do Registro"},
+        1: {"nome": "COD_PART", "descr": "Código de Identificação do Participante no Arquivo."},
+        2: {"nome": "NOME", "descr": "Nome Pessoal ou Empresarial do Participante."},
+        3: {"nome": "COD_PAIS", "descr": "Código do País do Participante."},
+        4: {"nome": "CNPJ", "descr": "CNPJ do Participante."},
+        5: {"nome": "CPF", "descr": "CPF do Participante."},
+        6: {"nome": "IE", "descr": "Inscrição Estadual do Participante"},
+        7: {"nome": "COD_MUN", "descr": "Código do Município, conforme a tabela IBGE."},
+        8: {"nome": "SUFRAMA", "descr": "Número de Inscrição do Participante na Suframa."},
+        9: {"nome": "END", "descr": "Logradouro e Endereço do Imóvel."},
+        10: {"nome": "NUM", "descr": "Número do Imóvel."},
+        11: {"nome": "COMPL", "descr": "Dados Complementares do Endereço."},
+        12: {"nome": "BAIRRO", "descr": "Bairro em que o imóvel está situado."},
+    },
+    # --- Bloco M ---
     "M001": {
         0: {"nome": "REG", "descr": "Identificador do Registro"},
         1: {"nome": "IND_MOV", "descr": "Indicador de movimento (0-Bloco com dados; 1-Bloco sem dados)"},
@@ -62,24 +105,35 @@ efd_layout = {
     },
     "M200": { # Consolidação da Contribuição para o PIS/Pasep do Período
         0: {"nome": "REG", "descr": "Identificador do Registro"},
-        1: {"nome": "VL_TOT_CONT_NC_PER", "descr": "Valor Total da Contribuição Não Cumulativa do Período (PIS)"},
-        2: {"nome": "VL_TOT_CRED_DESC_PER", "descr": "Valor Total do Crédito Descontado no Período (PIS)"},
-        3: {"nome": "VL_TOT_CRED_DESC_ANT_PER", "descr": "Valor Total do Crédito Descontado em Período Anterior (PIS)"},
-        4: {"nome": "VL_TOT_CONT_NC_DEV", "descr": "Valor Total da Contribuição Não Cumulativa Devolvida no Período (PIS)"},
-        5: {"nome": "VL_RET_NC", "descr": "Valor das Retenções na Fonte Não Cumulativas (PIS)"},
-        # ... (este registro tem muitos campos)
+        1: {"nome": "VL_TOT_CONT_NC_PER", "descr": "Valor Total da Contribuição Não Cumulativa do Período (recuperado do campo 13 do Registro M210, quando o campo “COD_CONT” = 01, 02, 03, 04, 32 e 71"},
+        2: {"nome": "VL_TOT_CRED_DESC", "descr": "Valor do Crédito Descontado, Apurado no Próprio Período da Escrituração (recuperado do campo 14 do Registro M100)"},
+        3: {"nome": "VL_TOT_CRED_DESC_ANT", "descr": "Valor do Crédito Descontado, Apurado em Período de Apuração Anterior (recuperado do campo 13 do Registro 1100)"},
+        4: {"nome": "VL_TOT_CONT_NC_DEV", "descr": "Valor Total da Contribuição Não Cumulativa Devida (01 – 02 - 03)"},
+        5: {"nome": "VL_RET_NC", "descr": "	Valor Retido na Fonte Deduzido no Período"},
+        6: {"nome": "VL_OUT_DED_NC", "descr": "Outras Deduções no Período"},
+        7: {"nome": "VL_CONT_NC_REC", "descr": "Valor da Contribuição Não Cumulativa a Recolher/Pagar (04 – 05 - 06)"},
+        8: {"nome": "VL_TOT_CONT_CUM_PER", "descr": "Valor Total da Contribuição Cumulativa do Período (recuperado do campo 13 do Registro M210, quando o campo “COD_CONT” = 31, 32, 51, 52, 53, 54 e 72)"},
+        9: {"nome": "VL_RET_CUM", "descr": "Valor Retido na Fonte Deduzido no Período"},
+        10: {"nome": "VL_OUT_DED_CUM", "descr": "Outras Deduções no Período"},
+        11: {"nome": "VL_CONT_CUM_REC", "descr": "Valor da Contribuição Cumulativa a Recolher/Pagar (08 - 09 – 10)"},
+        12: {"nome": "VL_TOT_CONT_REC", "descr": "Valor Total da Contribuição a Recolher/Pagar no Período (07 + 11)"},
     },
     "M210": { # Detalhamento da Contribuição para PIS/Pasep
         0: {"nome": "REG", "descr": "Identificador do Registro"},
-        1: {"nome": "COD_CONT", "descr": "Código da Contribuição Social (conforme Tabela 4.3.5)"},
+        1: {"nome": "COD_CONT", "descr": "Código da Contribuição Social (conforme a Tabela 4.3.5)"},
         2: {"nome": "VL_REC_BRT", "descr": "Valor da Receita Bruta"},
         3: {"nome": "VL_BC_CONT", "descr": "Valor da Base de Cálculo da Contribuição"},
         4: {"nome": "ALIQ_PIS", "descr": "Alíquota do PIS/Pasep (em percentual)"},
-        5: {"nome": "VL_CONT_APUR", "descr": "Valor da Contribuição Apurada"},
-        6: {"nome": "VL_CRED_PIS", "descr": "Valor do Crédito de PIS/Pasep a Descontar"},
-        # ...
+        5: {"nome": "QUANT_BC_PIS", "descr": "Quantidade - Base de cálculo PIS"},
+        6: {"nome": "ALIQ_PIS_QUANT", "descr": "Alíquota do PIS (em reais)"},
+        7: {"nome": "VL_CONT_APUR", "descr": "Valor total da contribuição social apurada"},
+        8: {"nome": "VL_AJUS_ACRES", "descr": "Valor total dos ajustes de acréscimo"},
+        9: {"nome": "VL_AJUS_REDUC", "descr": "Valor total dos ajustes de redução"},
+        10: {"nome": "VL_CONT_DIFER", "descr": "Valor da contribuição a diferir no período"},
+        11: {"nome": "VL_CONT_DIFER_ANT", "descr": "Valor da contribuição diferida em períodos anteriores"},
+        12: {"nome": "VL_CONT_PER", "descr": "Valor total da Contribuição do Período (08 + 09 - 10 - 11 + 12)"},
     },
-    # --- Bloco 1 (Exemplos) ---
+    # --- Bloco 1 ---
     "1001": {
         0: {"nome": "REG", "descr": "Identificador do Registro"},
         1: {"nome": "IND_MOV", "descr": "Indicador de movimento (0-Bloco com dados; 1-Bloco sem dados)"},
@@ -92,17 +146,37 @@ efd_layout = {
         4: {"nome": "COD_CRED", "descr": "Código do Tipo do Crédito"},
         5: {"nome": "VL_CRED_APU", "descr": "Valor total do crédito apurado na Escrituração Fiscal Digital (Registro M100) ou em demonstrativo DACON (Fichas 06A e 06B) de período anterior."},
         6: {"nome": "VL_CRED_EXT_APU", "descr": "Valor de Crédito Extemporâneo Apurado (Registro 1101), referente a Período Anterior, Informado no Campo 02 – PER_APU_CRED"},
-        7: {"nome": "VL_TOT_CRED_APU", "descr": "Valor Total do Crédito Apurado (06 + 07)"},
+        7: {"nome": "VL_TOT_CRED_APU", "descr": "Valor Total do Crédito Apurado (05 + 06)"},
         8: {"nome": "VL_CRED_DESC_PA_ANT", "descr": "Valor do Crédito utilizado mediante Desconto, em Período(s) Anterior(es)."},
         9: {"nome": "VL_CRED_PER_PA_ANT", "descr": "Valor do Crédito utilizado mediante Pedido de Ressarcimento, em Período(s) Anterior(es)."},
         10: {"nome": "VL_CRED_DCOMP_PA_ANT", "descr": "Valor do Crédito utilizado mediante Declaração de Compensação Intermediária (Crédito de Exportação), em Período(s) Anterior(es)."},
-        11: {"nome": "SD_CRED_DISP_EFD", "descr": "Saldo do Crédito Disponível para Utilização neste Período de Escrituração (08 – 09 – 10 - 11)."},
+        11: {"nome": "SD_CRED_DISP_EFD", "descr": "Saldo do Crédito Disponível para Utilização neste Período de Escrituração (07 – 08 – 09 - 10)."},
         12: {"nome": "VL_CRED_DESC_EFD", "descr": "Valor do Crédito descontado neste período de escrituração."},
         13: {"nome": "VL_CRED_PER_EFD", "descr": "Valor do Crédito objeto de Pedido de Ressarcimento (PER) neste período de escrituração."},
         14: {"nome": "VL_CRED_DCOMP_EFD", "descr": "Valor do Crédito utilizado mediante Declaração de Compensação Intermediária neste período de escrituração."},
         15: {"nome": "VL_CRED_TRANS", "descr": "Valor do crédito transferido em evento de cisão, fusão ou incorporação."},
         16: {"nome": "VL_CRED_OUT", "descr": "Valor do crédito utilizado por outras formas."},
-        17: {"nome": "SLD_CRED_FIM", "descr": "Saldo de créditos a utilizar em período de apuração futuro (12 – 13 – 14 – 15 – 16 - 17)."},
+        17: {"nome": "SLD_CRED_FIM", "descr": "Saldo de créditos a utilizar em período de apuração futuro (11 – 12 – 13 – 14 – 15 - 16)."},
+    },
+    "1500": {
+        0: {"nome": "REG", "descr": "Identificador do Registro"},
+        1: {"nome": "PER_APU_CRED", "descr": "Período de Apuração do Crédito (MM/AAAA)"},
+        2: {"nome": "ORIG_CRED", "descr": "Indicador da origem do crédito: 01 – Crédito decorrente de operações próprias; 02 – Crédito transferido por pessoa jurídica sucedida."},
+        3: {"nome": "CNPJ_SUC", "descr": "CNPJ da pessoa jurídica cedente do crédito (se ORIG_CRED = 02)"},
+        4: {"nome": "COD_CRED", "descr": "Código do Tipo do Crédito"},
+        5: {"nome": "VL_CRED_APU", "descr": "Valor total do crédito apurado na Escrituração Fiscal Digital (Registro M500) ou em demonstrativo DACON (Fichas 16A e 16B) de período anterior."},
+        6: {"nome": "VL_CRED_EXT_APU", "descr": "Valor de Crédito Extemporâneo Apurado (Registro 1501), referente a Período Anterior, Informado no Campo 01 – PER_APU_CRED"},
+        7: {"nome": "VL_TOT_CRED_APU", "descr": "Valor Total do Crédito Apurado (05 + 06)"},
+        8: {"nome": "VL_CRED_DESC_PA_ANT", "descr": "Valor do Crédito utilizado mediante Desconto, em Período(s) Anterior(es)."},
+        9: {"nome": "VL_CRED_PER_PA_ANT", "descr": "Valor do Crédito utilizado mediante Pedido de Ressarcimento, em Período(s) Anterior(es)."},
+        10: {"nome": "VL_CRED_DCOMP_PA_ANT", "descr": "Valor do Crédito utilizado mediante Declaração de Compensação Intermediária (Crédito de Exportação), em Período(s) Anterior(es)."},
+        11: {"nome": "SD_CRED_DISP_EFD", "descr": "Saldo do Crédito Disponível para Utilização neste Período de Escrituração (07 – 08 – 09 - 10)."},
+        12: {"nome": "VL_CRED_DESC_EFD", "descr": "Valor do Crédito descontado neste período de escrituração."},
+        13: {"nome": "VL_CRED_PER_EFD", "descr": "Valor do Crédito objeto de Pedido de Ressarcimento (PER) neste período de escrituração."},
+        14: {"nome": "VL_CRED_DCOMP_EFD", "descr": "Valor do Crédito utilizado mediante Declaração de Compensação Intermediária neste período de escrituração."},
+        15: {"nome": "VL_CRED_TRANS", "descr": "Valor do crédito transferido em evento de cisão, fusão ou incorporação."},
+        16: {"nome": "VL_CRED_OUT", "descr": "Valor do crédito utilizado por outras formas."},
+        17: {"nome": "SLD_CRED_FIM", "descr": "Saldo de créditos a utilizar em período de apuração futuro (11 – 12 – 13 – 14 – 15 - 16)."},
     },
     "1900": { # Consolidação dos Documentos Emitidos por ECF (PIS/Pasep e Cofins)
         0: {"nome": "REG", "descr": "Identificador do Registro"},
@@ -110,7 +184,14 @@ efd_layout = {
         2: {"nome": "COD_MOD", "descr": "Código do modelo do documento fiscal (02, 2D)"},
         3: {"nome": "SER", "descr": "Série do documento fiscal"},
         4: {"nome": "SUB_SER", "descr": "Subsérie do documento fiscal"},
-        # ...
+        5: {"nome": "COD_SIT", "descr": "Código da situação do documento fiscal: 00 – Documento regular; 02 – Documento cancelado; 99 – Outros"},
+        6: {"nome": "VL_TOT_REC", "descr": "Valor total da receita, conforme os documentos emitidos no período, representativos da venda de bens e serviços"},
+        7: {"nome": "QUANT_DOC", "descr": "Quantidade total de documentos emitidos no período"},
+        8: {"nome": "CST_PIS", "descr": "Código da Situação Tributária do PIS/Pasep"},
+        9: {"nome": "CST_COFINS", "descr": "Código da Situação Tributária da Cofins"},
+        10: {"nome": "CFOP", "descr": "Código fiscal de operação e prestação"},
+        11: {"nome": "INF_COMPL", "descr": "Informações complementares"},
+        12: {"nome": "COD_CTA", "descr": "Código da conta analítica contábil representativa da receita"},
     }
-    # Adicione mais registros e campos conforme necessário
+    # Adicionar mais registros e campos conforme necessário
 }

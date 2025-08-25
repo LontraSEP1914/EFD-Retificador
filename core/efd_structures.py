@@ -1,4 +1,4 @@
-# core/efd_structures.py
+# efd_structures.py
 
 class RegistroEFD:
     def __init__(self, tipo_registro: str, campos: list[str]):

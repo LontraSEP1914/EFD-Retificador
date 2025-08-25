@@ -1,4 +1,4 @@
-# core/efd_parser.py
+# efd_parser.py
 
 from .efd_structures import RegistroEFD  # Importa a classe que definimos
 

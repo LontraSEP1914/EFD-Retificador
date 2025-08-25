@@ -1,6 +1,5 @@
-# gui/main_window.py
+# main_window.py
 
-import os
 from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QPushButton, QFileDialog, QListWidget, QListWidgetItem,
                              QLabel, QLineEdit, QMenuBar, QFormLayout,
@@ -8,6 +7,7 @@ from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
 from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtCore import Qt, QTimer
 from functools import partial # Para conectar sinais com argumentos extras
+import os
 
 from core.efd_parser import parse_efd_file
 from core.efd_structures import RegistroEFD

@@ -5,8 +5,8 @@ from PyQt6.QtWidgets import QApplication
 from gui.main_window import MainWindow  
 
 COR_LARANJA_PRINCIPAL = "#dd9646"
-COR_LARANJA_CLARO_BEGE = "#faf0d9" 
-COR_TEXTO_ESCOLHIDA = "#bf8a59"    
+COR_LARANJA_CLARO_BEGE = "#faf0d9"
+COR_TEXTO_ESCOLHIDA = "#bf8a59"
 COR_FUNDO_JANELA = "#fcf5e5"
 
 COR_TEXTO_PADRAO_ESCURO = "#504A40" # Um marrom/cinza escuro para melhor contraste de texto
@@ -41,9 +41,9 @@ SPED_STYLE_SHEET = f"""
         background-color: {COR_BORDA_LARANJA_ESCURA};
     }}
     QPushButton:disabled {{
-    background-color: #cccccc; /* Um cinza para indicar desabilitado */
-    color: #888888;
-    border-color: #aaaaaa;
+        background-color: #cccccc; /* Um cinza para indicar desabilitado */
+        color: #888888;
+        border-color: #aaaaaa;
     }}
     QLineEdit, QComboBox, QListWidget {{
         border: 1px solid {COR_LARANJA_PRINCIPAL};
@@ -132,11 +132,10 @@ SPED_STYLE_SHEET = f"""
         margin-right: 5px;
     }}
     QComboBox:disabled {{
-    background-color: #eeeeee;
-    border-color: #cccccc;
-    color: #888888; /* Cor do placeholder text quando desabilitado */
+        background-color: #eeeeee;
+        border-color: #cccccc;
+        color: #888888; /* Cor do placeholder text quando desabilitado */
     }}
-
 """
 
 if __name__ == '__main__':

@@ -1,4 +1,4 @@
-# core/efd_generator.py
+# efd_generator.py
 
 from .efd_structures import RegistroEFD # Para type hinting
 

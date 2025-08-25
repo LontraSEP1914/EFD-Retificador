@@ -1,4 +1,4 @@
-# core/efd_record_automations.py
+# efd_record_automations.py
 
 """
 Define regras de automação aplicáveis a registros específicos da EFD Contribuições.
@@ -198,7 +198,7 @@ def m100_usar_credito_total(registro_m100, todos_os_registros=None) -> list[int]
 regras_disponiveis = {
     "M210": [
         {
-            "nome_exibicao": "Calcular Contribuição PIS (M210)",
+            "nome_exibicao": "M210: Calcular Contribuição PIS",
             "funcao": calcular_contribuicao_m210,
             "descricao": "Calcula o Valor da Contribuição Apurada (VL_CONT_APUR) baseado na Base de Cálculo e Alíquota."
         },
@@ -219,7 +219,7 @@ if "M100" not in regras_disponiveis:
 
 regras_disponiveis["M100"].append(
     {
-        "nome_exibicao": "Aplicar Lógica de Uso de Crédito (M100)",
+        "nome_exibicao": "M100: Uso de Crédito (11 - 13)",
         "funcao": aplicar_logica_utilizacao_credito_m100,
         "descricao": "Calcula o Indicador de Uso e o Saldo a Diferir com base no Crédito Disponível e no Crédito Utilizado no período."
     }
